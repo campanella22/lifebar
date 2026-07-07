@@ -8,6 +8,8 @@ on:
 jobs:
   test:
     runs-on: macos-15
+    permissions:
+      contents: write   # タグ時のリリース作成に必要
     steps:
       - uses: actions/checkout@v4
       - name: テスト
