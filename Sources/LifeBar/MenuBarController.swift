@@ -27,7 +27,8 @@ final class MenuBarController {
 
         // 0.5秒ごとに2コマアニメ
         animTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            guard let self else { return }
+            Task { @MainActor in self.refresh() }
         }
         appState.objectWillChange
             .receive(on: RunLoop.main)

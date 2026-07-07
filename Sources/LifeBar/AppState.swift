@@ -45,7 +45,8 @@ final class AppState: ObservableObject {
         // エンジンtick: 通常60秒ごと。早回し時は追従のため1秒ごと
         let interval: TimeInterval = clock.timeScale > 1 ? 1 : 60
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tickNow() }
+            guard let self else { return }
+            Task { @MainActor in self.tickNow() }
         }
         tickNow()
     }
