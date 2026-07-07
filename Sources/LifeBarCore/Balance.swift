@@ -15,4 +15,6 @@ public enum Balance {
     public static let warningLeadTime: TimeInterval = 24 * 3600
     /// 全パラメータXP0がこの時間続くとどん底エンディング
     public static let rockBottomDuration: TimeInterval = 72 * 3600
+    /// 次レベルへの進捗がこれ以上なら「予感」メッセージを出す
+    public static let foreshadowProgress: Double = 0.7
 }
