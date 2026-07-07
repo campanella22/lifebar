@@ -2,12 +2,23 @@ import AppKit
 import Combine
 import LifeBarCore
 
+/// セッション終了時の「おつかれさま」サマリー
+struct SessionSummary: Equatable {
+    let target: Param
+    let minutes: Int
+    let xpGained: Int
+    /// 次のレベルが近い時だけ出る意味深な一言
+    let foreshadow: String?
+}
+
 /// Core と UI の橋渡し。tick の駆動・保存・イベントキュー管理を担う
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var state: LifeState
     /// 未表示のイベントカード（先頭から表示）
     @Published private(set) var eventQueue: [LifeEvent] = []
+    /// 停止直後に表示するサマリー
+    @Published private(set) var summary: SessionSummary?
 
     private let store: Store
     private let clock: AppClock
@@ -57,8 +68,18 @@ final class AppState: ObservableObject {
     }
 
     func stop() {
-        let (new, events) = LifeEngine.stopSession(state, now: clock.now())
+        guard let session = state.session else { return }
+        let now = clock.now()
+        let minutes = now.timeIntervalSince(session.startedAt) / 60
+        let (new, events) = LifeEngine.stopSession(state, now: now)
         state = new
+        let ps = new.params[session.target]!
+        summary = SessionSummary(
+            target: session.target,
+            minutes: Int(minutes),
+            xpGained: Int(minutes * Balance.xpPerMinute),
+            foreshadow: Foreshadow.message(param: session.target, level: ps.level, xp: ps.xp)
+        )
         eventQueue.append(contentsOf: events)
         if !events.isEmpty { NotificationService.post(events) }
         store.save(state)
@@ -66,6 +87,10 @@ final class AppState: ObservableObject {
 
     func dismissEvent() {
         if !eventQueue.isEmpty { eventQueue.removeFirst() }
+    }
+
+    func dismissSummary() {
+        summary = nil
     }
 
     func updateSettings(_ settings: UserSettings) {

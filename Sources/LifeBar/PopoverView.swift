@@ -23,8 +23,11 @@ struct PopoverView: View {
 
             if appState.isStudying {
                 HStack(spacing: 12) {
-                    Text("⏱ \(appState.elapsedText ?? "")")
-                        .font(.system(.title3, design: .monospaced))
+                    // TimelineView で1秒ごとに再描画（elapsedText は @Published でないため）
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        Text("⏱ \(appState.elapsedText ?? "")")
+                            .font(.system(.title3, design: .monospaced))
+                    }
                     Button("■ 停止") { appState.stop() }
                         .buttonStyle(.borderedProminent)
                 }
@@ -55,7 +58,10 @@ struct PopoverView: View {
             DetailView().environmentObject(appState)
         }
         .overlay {
-            if let event = appState.eventQueue.first {
+            // サマリー優先、その後にイベントカードを順番に表示
+            if let summary = appState.summary {
+                SummaryCardView(summary: summary) { appState.dismissSummary() }
+            } else if let event = appState.eventQueue.first {
                 EventCardView(event: event) { appState.dismissEvent() }
             }
         }
