@@ -25,7 +25,7 @@ A macOS menu bar study timer where a pixel-art guy's life improves as you study 
 ### ソースからビルド / Build from source
 
 ```bash
-git clone <this repo> && cd lifebar
+git clone https://github.com/campanella22/lifebar.git && cd lifebar
 make run        # ビルドして dist/LifeBar.app を起動
 make test       # ユニットテスト
 make sprites    # ドット絵の再生成（Python 3 標準ライブラリのみ）
