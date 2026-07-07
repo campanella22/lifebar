@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import LifeBarCore
 
@@ -49,6 +50,8 @@ struct DetailView: View {
                         Toggle("ログイン時に起動", isOn: settingBinding(\.launchAtLogin))
                     }
                     Button("人生をリセット", role: .destructive) { confirmingReset = true }
+                        .frame(maxWidth: .infinity)
+                    Button("LifeBar を終了") { NSApp.terminate(nil) }
                         .frame(maxWidth: .infinity)
                 }
                 .padding(12)
