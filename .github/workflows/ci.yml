@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: テスト
+        run: swift test
+      - name: .app ビルド
+        run: make app
+      - name: リリース添付（タグ時のみ）
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          ditto -c -k --keepParent dist/LifeBar.app dist/LifeBar.zip
+          gh release create "${GITHUB_REF_NAME}" dist/LifeBar.zip --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
