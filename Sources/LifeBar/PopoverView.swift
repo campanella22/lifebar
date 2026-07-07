@@ -69,21 +69,35 @@ struct PopoverView: View {
 
     private func gauge(_ emoji: String, _ p: Param) -> some View {
         let ps = appState.state.params[p]!
-        return HStack(spacing: 6) {
-            Text(emoji).font(.caption)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3).fill(.quaternary)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(.tint)
-                        .frame(width: geo.size.width * LifeEngine.progress(xp: ps.xp, level: ps.level))
+        return VStack(spacing: 1) {
+            HStack(spacing: 6) {
+                Text(emoji).font(.caption)
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3).fill(.quaternary)
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(.tint)
+                            .frame(width: geo.size.width * LifeEngine.progress(xp: ps.xp, level: ps.level))
+                    }
                 }
+                .frame(height: 8)
+                Text("Lv\(ps.level)")
+                    .font(.caption.monospacedDigit())
+                    .frame(width: 28, alignment: .trailing)
             }
-            .frame(height: 8)
-            Text("Lv\(ps.level)")
-                .font(.caption.monospacedDigit())
-                .frame(width: 28, alignment: .trailing)
+            // バーは「次のLvまでの進捗」。残りを明示する
+            Text(nextLevelText(ps))
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
+    }
+
+    private func nextLevelText(_ ps: ParamState) -> String {
+        guard let remain = LifeEngine.xpToNextLevel(xp: ps.xp, level: ps.level) else {
+            return "MAX！"
+        }
+        return "Lv\(ps.level + 1)まで あと\(Int(remain.rounded(.up)))XP"
     }
 
     private func startButton(_ emoji: String, _ p: Param) -> some View {

@@ -18,6 +18,12 @@ public enum LifeEngine {
         return min(1, max(0, (xp - lo) / (hi - lo)))
     }
 
+    /// 次のレベルまでの残りXP（最大レベルなら nil）
+    public static func xpToNextLevel(xp: Double, level: Int) -> Double? {
+        guard level < Balance.maxLevel else { return nil }
+        return max(0, Balance.levelThresholds[level + 1] - xp)
+    }
+
     /// 時間経過の適用。起動時・1分ごと・セッション開始/終了時に呼ぶ。
     /// 数日分の放置も同じロジックで精算できる。
     public static func tick(_ state: LifeState, now: Date) -> (state: LifeState, events: [LifeEvent]) {

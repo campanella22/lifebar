@@ -145,6 +145,13 @@ final class LifeEngineTests: XCTestCase {
         XCTAssertEqual(LifeEngine.level(forXP: 107, currentLevel: 1), 0)
     }
 
+    func test_次のレベルまでの残りXP() {
+        XCTAssertEqual(LifeEngine.xpToNextLevel(xp: 700, level: 2), 800)   // Lv3閾値1500まで
+        XCTAssertEqual(LifeEngine.xpToNextLevel(xp: 0, level: 0), 120)
+        XCTAssertEqual(LifeEngine.xpToNextLevel(xp: 1600, level: 2), 0)    // 閾値超過中は0で下限
+        XCTAssertNil(LifeEngine.xpToNextLevel(xp: 3000, level: 4))         // MAXはnil
+    }
+
     func test_進捗率はレベル内の割合() {
         XCTAssertEqual(LifeEngine.progress(xp: 0, level: 0), 0, accuracy: 0.001)
         XCTAssertEqual(LifeEngine.progress(xp: 60, level: 0), 0.5, accuracy: 0.001)   // 0→120 の半分
