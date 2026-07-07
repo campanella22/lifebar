@@ -139,6 +139,108 @@ def gen_menubar():
                 write_png(OUT / f"mb_b{level}_{state}_f{frame}.png", c)
 
 
+def draw_house(level, canvas):
+    """金Lvに応じた家を論理96×64キャンバスの右側に描く"""
+    # (幅, 高さ, 屋根色, 窓の数)
+    spec = {0: (18, 14, "N", 1), 1: (22, 18, "D", 2), 2: (28, 22, "R", 4),
+            3: (32, 34, "D", 8), 4: (44, 38, "Y", 12)}[level]
+    w, h, roof, windows = spec
+    x, ground = 92 - w, 56
+    canvas.rect(x, ground - h, w, h, C["W"])               # 壁
+    canvas.rect(x - 2, ground - h - 4, w + 4, 4, C[roof])  # 屋根
+    canvas.rect(x + w // 2 - 2, ground - 6, 4, 6, C["N"])  # ドア
+    col = max(2, windows // 2)
+    for i in range(windows):                               # 窓
+        wx = x + 3 + (i % col) * ((w - 6) // col)
+        wy = ground - h + 3 + (i // col) * 7
+        canvas.rect(wx, wy, 3, 3, C["Q"])
+
+
+def draw_scene_bg(level):
+    c = Canvas(96, 64)
+    c.rect(0, 0, 96, 56, C["Q"])       # 空
+    c.rect(0, 56, 96, 8, C["L"])       # 地面
+    draw_house(level, c)
+    return c
+
+
+def draw_person(h, dress, hair="K"):
+    """同伴者（高さ h の簡易人型）: 頭2/5、服3/5"""
+    c = Canvas(h // 2 + 2, h)
+    cx = c.w // 2
+    head = max(3, h * 2 // 5)
+    c.rect(cx - head // 2, 0, head, 2, C[hair])
+    c.rect(cx - head // 2, 2, head, head - 2, C["S"])
+    c.rect(cx - head // 2 - 1, head, head + 2, h - head, C[dress])
+    return c
+
+
+def draw_love_group(level):
+    """Lv1=彼女 Lv2=妻 Lv3=妻+子供 Lv4=妻+子供+孫"""
+    c = Canvas(40, 32)
+    if level == 1:
+        c.blit(draw_person(20, "P"), 2, 12)
+    if level >= 2:
+        c.blit(draw_person(22, "R"), 2, 10)
+    if level >= 3:
+        c.blit(draw_person(12, "B"), 16, 20)
+    if level >= 4:
+        c.blit(draw_person(10, "L"), 28, 22)
+    return c
+
+
+def draw_scene_guy(level, state="idle"):
+    """シーン用の大きい男（論理24×32）。体型は BODY を一回り大きく"""
+    c = Canvas(24, 32)
+    shoulder, arm, torso = BODY[level]
+    torso = torso + 3          # シーン用に一回り大きく
+    arm = arm + 1
+    cx = 12
+    c.rect(cx - 3, 2, 6, 4, C["K"])
+    c.rect(cx - 3, 6, 6, 4, C["S"])
+    c.rect(cx - torso // 2, 10, torso, 10, C["W"])
+    c.rect(cx - torso // 2 - arm, 12, arm, 8, C["S"])
+    c.rect(cx + torso // 2, 12, arm, 8, C["S"])
+    c.rect(cx - torso // 2, 20, 3, 9, C["B"])
+    c.rect(cx + torso // 2 - 3, 20, 3, 9, C["B"])
+    return c
+
+
+def draw_ending(kind):
+    c = Canvas(96, 64)
+    if kind == "victory":
+        c.rect(0, 0, 96, 64, C["Y"])
+        c.blit(draw_scene_guy(4), 20, 26)
+        c.blit(draw_love_group(4), 46, 28)
+        for (x, y) in [(10, 8), (30, 14), (52, 6), (74, 12), (86, 20)]:  # 星
+            c.set(x, y, C["W"])
+            c.set(x + 1, y, C["W"])
+            c.set(x, y + 1, C["W"])
+    else:  # rockbottom
+        c.rect(0, 0, 96, 56, C["K"])
+        c.rect(0, 56, 96, 8, C["N"])
+        c.rect(78, 6, 8, 8, C["Y"])                     # 月
+        c.blit(draw_scene_guy(0), 30, 26)
+        c.rect(46, 44, 8, 6, C["N"])                    # カバン
+    return c
+
+
+def gen_scene():
+    for lv in range(5):
+        write_png(OUT / f"scene_bg_{lv}.png", draw_scene_bg(lv).scaled(4))
+        write_png(OUT / f"scene_guy_{lv}.png", draw_scene_guy(lv).scaled(4))
+    for lv in range(1, 5):
+        write_png(OUT / f"scene_love_{lv}.png", draw_love_group(lv).scaled(4))
+    write_png(OUT / "ending_victory.png", draw_ending("victory").scaled(4))
+    write_png(OUT / "ending_rockbottom.png", draw_ending("rockbottom").scaled(4))
+    # アプリアイコン用（512px）: Lv3 の男をドンと
+    icon = Canvas(32, 32)
+    icon.rect(0, 0, 32, 32, C["Q"])
+    icon.blit(draw_scene_guy(3), 4, 0)
+    write_png(OUT / "icon_512.png", icon.scaled(16))
+
+
 if __name__ == "__main__":
     gen_menubar()
+    gen_scene()
     print(f"generated → {OUT}")
