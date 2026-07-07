@@ -61,6 +61,45 @@ public enum LifeEngine {
             s.warnedParams.remove(p)   // レベルが動いたら警告状態はリセット
         }
 
+        // 転落警告（放置中のみ。1回だけ）
+        if s.session == nil {
+            for p in Param.allCases {
+                let ps = s.params[p]!
+                guard ps.level > 0 else { s.warnedParams.remove(p); continue }
+                let floor = Balance.levelThresholds[ps.level] * Balance.levelDownFactor
+                let secondsToDown = (ps.xp - floor) / Balance.decayPerHour * 3600
+                if secondsToDown <= Balance.warningLeadTime {
+                    if !s.warnedParams.contains(p) {
+                        s.warnedParams.insert(p)
+                        events.append(LifeEvent(date: now, kind: .warning(param: p)))
+                    }
+                } else {
+                    s.warnedParams.remove(p)
+                }
+            }
+        }
+
+        // どん底判定（放置中のみカウント）
+        if s.session == nil && Param.allCases.allSatisfy({ s.params[$0]!.xp <= 0 }) {
+            if let since = s.rockBottomSince {
+                if now.timeIntervalSince(since) >= Balance.rockBottomDuration {
+                    events.append(LifeEvent(date: now, kind: .rockBottom(run: s.run)))
+                    s = s.rebirth(now: now)
+                }
+            } else {
+                s.rockBottomSince = now
+            }
+        } else {
+            s.rockBottomSince = nil
+        }
+
+        // 勝利判定
+        if Param.allCases.allSatisfy({ s.params[$0]!.level == Balance.maxLevel }) {
+            events.append(LifeEvent(date: now, kind: .victory(run: s.run)))
+            s.hallOfFame.append(HallEntry(run: s.run, achievedAt: now, totalStudyMinutes: s.totalStudyMinutes))
+            s = s.rebirth(now: now)
+        }
+
         s.eventLog.append(contentsOf: events)
         if s.eventLog.count > 200 {
             s.eventLog.removeFirst(s.eventLog.count - 200)

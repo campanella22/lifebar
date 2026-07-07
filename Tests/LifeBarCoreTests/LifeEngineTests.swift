@@ -80,6 +80,49 @@ final class LifeEngineTests: XCTestCase {
         XCTAssertEqual(r.totalStudyMinutes, 60, accuracy: 0.001)   // 生涯累計は残る
     }
 
+    func test_転落24時間前に警告が1回だけ出る() {
+        // Lv1 床108。xp=130 なら残り22時間 → 警告ゾーン
+        let s = 状態(muscle: 132)   // 2時間減衰後に130
+        let (r1, e1) = LifeEngine.tick(s, now: t0.addingTimeInterval(2 * 3600))
+        XCTAssertTrue(e1.contains { if case .warning(param: .muscle) = $0.kind { true } else { false } })
+        // さらに1時間 → 2回目は出ない
+        let (_, e2) = LifeEngine.tick(r1, now: t0.addingTimeInterval(3 * 3600))
+        XCTAssertFalse(e2.contains { if case .warning = $0.kind { true } else { false } })
+    }
+
+    func test_勉強してゾーンを出れば警告状態が解除される() {
+        let s = 状態(muscle: 132)
+        var r: LifeState
+        (r, _) = LifeEngine.tick(s, now: t0.addingTimeInterval(2 * 3600))       // xp130 → 警告発火済み
+        XCTAssertEqual(r.warnedParams, [.muscle])
+        (r, _) = LifeEngine.startSession(r, target: .muscle, now: t0.addingTimeInterval(2 * 3600))
+        (r, _) = LifeEngine.stopSession(r, now: t0.addingTimeInterval(2 * 3600 + 100 * 60))  // +100XP → 230
+        // 警告判定は放置中のみ行われるため、停止後の次のtickで解除される
+        (r, _) = LifeEngine.tick(r, now: t0.addingTimeInterval(2 * 3600 + 101 * 60))
+        XCTAssertTrue(r.warnedParams.isEmpty)   // ゾーン離脱（残り>24h）で解除
+    }
+
+    func test_全ゼロ72時間でどん底エンディング() {
+        let s = 状態()   // 全部0
+        let (r1, _) = LifeEngine.tick(s, now: t0.addingTimeInterval(3600))
+        XCTAssertNotNil(r1.rockBottomSince)
+        let (r2, e2) = LifeEngine.tick(r1, now: t0.addingTimeInterval(3600 + 72 * 3600))
+        XCTAssertTrue(e2.contains { if case .rockBottom(run: 1) = $0.kind { true } else { false } })
+        XCTAssertEqual(r2.run, 2)   // 転生済み
+    }
+
+    func test_全Lv4で勝利し殿堂入りして転生() {
+        var s = 状態(muscle: 2999, money: 3000, love: 3000)
+        s.totalStudyMinutes = 9000
+        (s, _) = LifeEngine.startSession(s, target: .muscle, now: t0)
+        let (r, events) = LifeEngine.tick(s, now: t0.addingTimeInterval(120))   // muscleが3000超え
+        XCTAssertTrue(events.contains { if case .victory(run: 1) = $0.kind { true } else { false } })
+        XCTAssertEqual(r.hallOfFame.count, 1)
+        XCTAssertEqual(r.hallOfFame[0].run, 1)
+        XCTAssertEqual(r.run, 2)
+        XCTAssertEqual(r.params[.muscle]!.xp, 0, accuracy: 0.001)   // 新しい人生
+    }
+
     func test_過去や同時刻のtickは無変化() {
         let s = 状態(muscle: 100)
         let (r, events) = LifeEngine.tick(s, now: t0)
