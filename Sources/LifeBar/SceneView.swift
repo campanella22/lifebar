@@ -22,7 +22,7 @@ struct SceneView: View {
                         .frame(width: 80, height: 64)
                 }
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, 18)   // 足が芝生（論理y=55付近）に乗る位置
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 16)
         }
