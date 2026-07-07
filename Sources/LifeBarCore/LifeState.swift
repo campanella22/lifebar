@@ -51,7 +51,7 @@ public struct LifeEvent: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
-public struct Settings: Codable, Equatable, Sendable {
+public struct UserSettings: Codable, Equatable, Sendable {
     public var showElapsed: Bool
     public var launchAtLogin: Bool
     public init(showElapsed: Bool = true, launchAtLogin: Bool = false) {
@@ -76,7 +76,7 @@ public struct LifeState: Codable, Equatable, Sendable {
     public var todayKey: String
     public var hallOfFame: [HallEntry]
     public var eventLog: [LifeEvent]
-    public var settings: Settings
+    public var settings: UserSettings
 
     public static func newGame(now: Date) -> LifeState {
         LifeState(
@@ -92,7 +92,7 @@ public struct LifeState: Codable, Equatable, Sendable {
             todayKey: LifeState.dayKey(now),
             hallOfFame: [],
             eventLog: [],
-            settings: Settings()
+            settings: UserSettings()
         )
     }
 

@@ -68,7 +68,7 @@ final class AppState: ObservableObject {
         if !eventQueue.isEmpty { eventQueue.removeFirst() }
     }
 
-    func updateSettings(_ settings: Settings) {
+    func updateSettings(_ settings: UserSettings) {
         state.settings = settings
         store.save(state)
     }
